@@ -83,7 +83,7 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 # Tests assert, construct settings with dummy secrets, and skip return annotations.
-"tests/*" = ["S101", "S105", "S106", "ANN201", "ANN001"]
+"tests/*" = ["S101", "S105", "S106", "S107", "ANN201", "ANN001"]
 "alembic/*" = ["ANN", "E501", "S"]
 
 [tool.ruff.lint.isort]

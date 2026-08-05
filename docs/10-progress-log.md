@@ -161,8 +161,66 @@ validation. This is the kind of gap only running the thing finds.
 
 ### Next
 
+Persistence and endpoints — see Entry 3's "Next" for the current list.
+
+---
+
+## 2026-08-05 — Entry 3: confidence gate and deterministic annotation renderer
+
+The two pieces that make the pipeline behave like the product described in
+`docs/06`, both pure enough to test exhaustively without a database.
+
+### Built
+
+**`features/vision/application/analysis_service.py`** — the confidence gate and
+clarification loop:
+
+- per-workflow required fields; a field fails the gate if it is missing *or*
+  below its threshold, and safety-critical fields are always re-checked even
+  when not required;
+- rounds 1–2 request specific extra photos (each carrying the reason shown to
+  the user), then it switches to asking direct questions, because an unbounded
+  "one more photo" loop is a worse failure than a question;
+- caps at 3 photo requests and 3 questions (`docs/01` F-4), and never repeats a
+  request it has already made;
+- when nothing is left to ask, it proceeds but hands the unresolved
+  safety-critical fields to the classifier to escalate — it never quietly
+  assumes a value;
+- answer coercion: "Hollow" → drywall, "34 lb" → 15.42 kg (converted, not
+  mistaken for kilos), "Not sure" → recorded as an answer but **no finding
+  created**, unparseable → nothing;
+- `AnalysisBuilder` normalises onto the controlled vocabulary, nulling an
+  unmappable wall material rather than snapping it to the nearest known one.
+
+**`infrastructure/imaging/annotator.py`** — the deterministic overlay renderer:
+
+- five mark kinds (arrow, box, dot, measure, label) drawn with Pillow from
+  model-supplied normalised coordinates, using design-system colours;
+- alt text per mark, so an annotated step is available to a screen reader and
+  degrades to text;
+- marks scale with image size and carry a dark halo, so they stay legible on a
+  bright wall and a dark cable alike;
+- a malformed op is skipped with a warning; the render never fails because of
+  one bad arrow;
+- output is byte-identical for identical inputs — the reproducibility that
+  generative editing cannot offer.
+
+### Verified
+
+265 tests passing (54 new), 95% coverage, ruff clean, `mypy --strict` clean,
+architecture guard ok.
+
+The renderer was also checked by eye, not just by assertion: a sample image was
+rendered and inspected. That found two real defects the tests had not — marks too
+faint to read at a glance, and the arrow's own label chip covering the arrow tip.
+Both are fixed (heavier strokes plus a halo; labels anchored to the arrow tail),
+and both now have tests.
+
+### Next
+
 1. SQLAlchemy models + Alembic initial migration + reference-data seed migration.
 2. Auth endpoints (register/login/refresh with family rotation and reuse detection).
 3. Media upload flow with EXIF stripping and perceptual hashing.
 4. Project create → analyze → job → analysis endpoints, then chat with SSE.
-5. Flutter scaffold: tokens, themes, router, design-system components.
+5. Guide post-validation (`docs/06` §9) wired between generation and persistence.
+6. Flutter scaffold: tokens, themes, router, design-system components.

@@ -224,3 +224,60 @@ and both now have tests.
 4. Project create → analyze → job → analysis endpoints, then chat with SSE.
 5. Guide post-validation (`docs/06` §9) wired between generation and persistence.
 6. Flutter scaffold: tokens, themes, router, design-system components.
+
+---
+
+## 2026-08-05 — Entry 4: interface prototype, and the contrast bugs it found
+
+### Built
+
+`docs/prototype/screens.html` — a self-contained, interactive prototype of the
+seven core screens, built to be judged before any Flutter code is written:
+
+1. **Home** — resume card, three workflows, recent with safety chips
+2. **Capture** — guided shot roles with reasons, "we have enough" state
+3. **Confirm what I saw** — findings with confidence meters, a user correction,
+   a photo request with its reason, a clarification question
+4. **Project (amber)** — computed caution card, pre-flight checklist, an
+   interactive timeline where completing a step advances the rail
+5. **Step** — the **real annotated photo from the backend renderer**, embedded as
+   a data URI, plus the verification line
+6. **Assistant** — pinned project context and an honest "I can't tell from this
+   photo" answer
+7. **Referral (red)** — non-dismissible notice, what to ask the professional, a
+   cost expectation, and the part the user can still do
+
+Every colour, size, radius and duration is read from `docs/05`, and a control on
+the page switches the app between dark and light so both themes are demonstrable
+rather than merely claimed.
+
+### Verified
+
+Rendered in a real browser (Playwright, both colour schemes): zero console
+errors, no horizontal overflow, balanced markup, 93 KB with no external
+requests. A contrast script measured every chip, caution, notice and metadata
+line against its actual background in both themes.
+
+### Bugs this found
+
+The prototype paid for itself before it was finished:
+
+1. **`text.tertiary` failed the spec's own contrast rule** — 3.9:1 on the dark
+   canvas, 3.31:1 on light, against a stated requirement of 4.5:1 for text.
+   Corrected to `#7F7F8B` / `#6E6E78`.
+2. **`safety.red` as text on its own dark fill measured 4.08:1.** Split the token
+   into a hue (strokes, dots, glyphs) and an ink (anything read), with
+   `#FF7B7B` on dark and `#B4232B` on light.
+3. Presentation defects only visible once rendered: project titles truncating
+   mid-word, action-card labels misaligning because one caption wrapped, the FAB
+   covering a card with no scroll affordance, an arrow label sitting over the
+   arrow's own tip, and a capture reticle that read as an empty placeholder
+   rather than a framing guide.
+
+`docs/05` carries the corrected values and an amendment note recording why.
+
+### Next
+
+Unchanged from Entry 3: persistence and migrations, then auth/media/project
+endpoints, then the Flutter scaffold — which now has a measured, reviewed target
+to build against.

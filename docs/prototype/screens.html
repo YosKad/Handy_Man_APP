@@ -1,0 +1,1886 @@
+<title>HandyAI — Interface Prototype</title>
+
+<style>
+  /* ===================================================================
+     Tokens. Values are lifted verbatim from docs/05-design-system.md so
+     this prototype and the Flutter theme cannot drift.
+     =================================================================== */
+  :root {
+    /* App palette — dark is the primary theme */
+    --app-canvas: #0B0B0F;
+    --app-surface: #14141A;
+    --app-raised: #1C1C24;
+    --app-border: rgba(255, 255, 255, 0.08);
+    --app-border-strong: rgba(255, 255, 255, 0.16);
+    --app-text: #F5F5F7;
+    --app-text-2: #A0A0AB;
+    --app-text-3: #7F7F8B;
+    --app-accent: #3D7BFF;
+    --app-on-accent: #FFFFFF;
+    --app-accent-muted: rgba(61, 123, 255, 0.14);
+
+    /* Safety palette — identical in both themes, contrast checked */
+    --green: #22C55E;
+    --green-fill: #0F3D2E;
+    --yellow: #F5A524;
+    --yellow-fill: #40320B;
+    --red: #EF4444;
+    --red-fill: #45141A;
+
+    /* Text colour for safety copy. On dark fills the hue itself is legible;
+       light mode needs a darker ink to clear 4.5:1. */
+    --green-ink: #22C55E;
+    --yellow-ink: #F5A524;
+    --red-ink: #FF7B7B;
+
+    /* Page chrome — a hair off the app ground so phones read as objects */
+    --page-bg: #08080B;
+    --page-panel: #101014;
+    --page-rule: rgba(255, 255, 255, 0.09);
+    --page-text: #EDEDF0;
+    --page-text-2: #8E8E99;
+    --page-text-3: #5C5C66;
+
+    /* Type scale, docs/05 §3 */
+    --t-display: 34px;
+    --t-title-lg: 28px;
+    --t-title: 22px;
+    --t-body-lg: 17px;
+    --t-body: 15px;
+    --t-label: 13px;
+    --t-caption: 12px;
+
+    /* Radius, docs/05 §4 */
+    --r-sm: 8px;
+    --r-md: 12px;
+    --r-lg: 16px;
+    --r-xl: 24px;
+
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, "Helvetica Neue", Arial, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  }
+
+  /* Light theme for the page chrome only. The phone screens carry their own
+     theme, switched by the control below, because a product screenshot should
+     not flip with the reader's OS. */
+  @media (prefers-color-scheme: light) {
+    :root {
+      --page-bg: #F1F1F4;
+      --page-panel: #FFFFFF;
+      --page-rule: rgba(11, 11, 15, 0.10);
+      --page-text: #14141A;
+      --page-text-2: #55555F;
+      --page-text-3: #86868F;
+    }
+  }
+  :root[data-theme="light"] {
+    --page-bg: #F1F1F4;
+    --page-panel: #FFFFFF;
+    --page-rule: rgba(11, 11, 15, 0.10);
+    --page-text: #14141A;
+    --page-text-2: #55555F;
+    --page-text-3: #86868F;
+  }
+  :root[data-theme="dark"] {
+    --page-bg: #08080B;
+    --page-panel: #101014;
+    --page-rule: rgba(255, 255, 255, 0.09);
+    --page-text: #EDEDF0;
+    --page-text-2: #8E8E99;
+    --page-text-3: #5C5C66;
+  }
+
+  /* The app's light theme, applied inside the phone frames on demand. */
+  .reel[data-app="light"] {
+    --app-canvas: #FBFBFD;
+    --app-surface: #FFFFFF;
+    --app-raised: #F4F4F7;
+    --app-border: rgba(11, 11, 15, 0.08);
+    --app-border-strong: rgba(11, 11, 15, 0.16);
+    --app-text: #0B0B0F;
+    --app-text-2: #55555F;
+    --app-text-3: #6E6E78;
+    --app-accent: #2563EB;
+    --app-accent-muted: rgba(37, 99, 235, 0.10);
+    --green-fill: #E7F7F0;
+    --yellow-fill: #FDF6E3;
+    --red-fill: #FDECEE;
+    /* Measured against the fills above: 4.8:1, 5.4:1, 5.3:1. */
+    --green-ink: #15803D;
+    --yellow-ink: #8A5A00;
+    --red-ink: #B4232B;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--page-bg);
+    color: var(--page-text);
+    font-family: var(--sans);
+    font-size: var(--t-body);
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 56px 24px 96px;
+  }
+
+  /* ---------------------------------------------------------------- header */
+
+  .eyebrow {
+    font-size: var(--t-caption);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-weight: 600;
+    color: var(--page-text-3);
+    font-variant-numeric: tabular-nums;
+    margin: 0 0 20px;
+  }
+
+  h1 {
+    font-size: clamp(30px, 5.4vw, 46px);
+    line-height: 1.08;
+    letter-spacing: -0.028em;
+    font-weight: 700;
+    margin: 0 0 20px;
+    max-width: 22ch;
+    text-wrap: balance;
+  }
+
+  .standfirst {
+    font-size: var(--t-body-lg);
+    line-height: 1.62;
+    color: var(--page-text-2);
+    max-width: 62ch;
+    margin: 0 0 12px;
+  }
+
+  .standfirst strong { color: var(--page-text); font-weight: 600; }
+
+  .caveat {
+    margin: 28px 0 0;
+    padding: 14px 18px;
+    border-left: 2px solid var(--yellow);
+    background: color-mix(in srgb, var(--yellow) 7%, transparent);
+    border-radius: 0 var(--r-sm) var(--r-sm) 0;
+    font-size: var(--t-label);
+    line-height: 1.6;
+    color: var(--page-text-2);
+    max-width: 66ch;
+  }
+
+  /* ---------------------------------------------------------------- controls */
+
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 14px;
+    margin: 40px 0 8px;
+    padding: 14px 16px;
+    background: var(--page-panel);
+    border: 1px solid var(--page-rule);
+    border-radius: var(--r-md);
+    position: sticky;
+    top: 12px;
+    z-index: 20;
+    backdrop-filter: blur(12px);
+  }
+
+  .controls-label {
+    font-size: var(--t-caption);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-weight: 600;
+    color: var(--page-text-3);
+  }
+
+  .seg {
+    display: inline-flex;
+    background: color-mix(in srgb, var(--page-text) 6%, transparent);
+    border-radius: 999px;
+    padding: 3px;
+    gap: 2px;
+  }
+
+  .seg button {
+    font: inherit;
+    font-size: var(--t-label);
+    font-weight: 600;
+    color: var(--page-text-2);
+    background: none;
+    border: 0;
+    padding: 7px 16px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background 140ms ease, color 140ms ease;
+  }
+
+  .seg button[aria-pressed="true"] {
+    background: var(--page-bg);
+    color: var(--page-text);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  }
+
+  .seg button:focus-visible,
+  .step:focus-visible,
+  .skip:focus-visible {
+    outline: 2px solid var(--app-accent);
+    outline-offset: 2px;
+  }
+
+  /* ---------------------------------------------------------------- reel */
+
+  .reel { display: flex; flex-direction: column; gap: 8px; }
+
+  .stage {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 348px;
+    gap: 48px;
+    align-items: start;
+    padding: 56px 0;
+    border-top: 1px solid var(--page-rule);
+  }
+
+  .stage:first-of-type { border-top: 0; }
+
+  /* Alternate so the eye zig-zags down the flow rather than marching. */
+  .stage:nth-of-type(even) { grid-template-columns: 348px minmax(0, 1fr); }
+  .stage:nth-of-type(even) .note { order: 2; }
+  .stage:nth-of-type(even) .phone-slot { order: 1; }
+
+  .note { padding-top: 8px; }
+
+  .marker {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+
+  .marker .n {
+    font-family: var(--mono);
+    font-size: var(--t-caption);
+    font-weight: 600;
+    color: var(--app-accent);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .marker .k {
+    font-size: var(--t-caption);
+    text-transform: uppercase;
+    letter-spacing: 0.13em;
+    font-weight: 600;
+    color: var(--page-text-3);
+  }
+
+  .note h2 {
+    font-size: var(--t-title);
+    line-height: 1.25;
+    letter-spacing: -0.016em;
+    font-weight: 650;
+    margin: 0 0 12px;
+    text-wrap: balance;
+  }
+
+  .note p {
+    margin: 0 0 12px;
+    color: var(--page-text-2);
+    max-width: 46ch;
+    font-size: var(--t-body);
+  }
+
+  .note p:last-child { margin-bottom: 0; }
+  .note em { color: var(--page-text); font-style: normal; font-weight: 600; }
+
+  .decides {
+    margin-top: 18px;
+    padding: 12px 14px;
+    background: var(--page-panel);
+    border: 1px solid var(--page-rule);
+    border-radius: var(--r-sm);
+    font-size: var(--t-label);
+    line-height: 1.55;
+    color: var(--page-text-2);
+  }
+
+  .decides b {
+    display: block;
+    font-size: var(--t-caption);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--page-text-3);
+    margin-bottom: 5px;
+    font-weight: 600;
+  }
+
+  .decides code {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--app-accent);
+    background: var(--app-accent-muted);
+    padding: 1px 5px;
+    border-radius: 4px;
+  }
+
+  /* ---------------------------------------------------------------- phone */
+
+  .phone-slot { display: flex; justify-content: center; }
+
+  .phone {
+    width: 348px;
+    max-width: 100%;
+    background: var(--app-canvas);
+    border: 1px solid var(--app-border-strong);
+    border-radius: 38px;
+    padding: 10px;
+    box-shadow: 0 28px 70px -28px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(0, 0, 0, 0.35);
+    color: var(--app-text);
+    font-size: var(--t-body);
+  }
+
+  .screen {
+    background: var(--app-canvas);
+    border-radius: 30px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: 664px;
+    position: relative;
+    --fade-bottom: 0px;
+  }
+
+  /* Scroll affordance: content passing under the tab bar or the screen edge
+     fades out, so a cut-off card reads as "keep scrolling". */
+  .screen.faded::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: var(--fade-bottom);
+    height: 46px;
+    background: linear-gradient(to bottom, transparent, var(--app-canvas));
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .screen.has-tabs { --fade-bottom: 62px; }
+  .screen.has-composer { --fade-bottom: 64px; }
+
+  .statusbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 20px 4px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--app-text-2);
+    font-variant-numeric: tabular-nums;
+    flex: none;
+  }
+
+  .statusbar .glyphs { display: flex; gap: 4px; align-items: center; }
+  .statusbar .bar { width: 3px; border-radius: 1px; background: var(--app-text-2); }
+
+  .body {
+    flex: 1 1 auto;
+    overflow: hidden;
+    padding: 8px 20px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .body.flush { padding: 0; gap: 0; }
+  .body.scrolls { overflow-y: auto; scrollbar-width: thin; }
+
+  /* ------------------------------------------------ app typography */
+
+  .greeting { font-size: var(--t-caption); color: var(--app-text-3); font-weight: 500; }
+  .h-screen {
+    font-size: var(--t-title-lg);
+    line-height: 1.15;
+    letter-spacing: -0.022em;
+    font-weight: 700;
+    margin: 0;
+  }
+  .h-sec {
+    font-size: var(--t-label);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 650;
+    color: var(--app-text-3);
+    margin: 0 0 10px;
+  }
+  .p-app { font-size: var(--t-body); line-height: 1.5; color: var(--app-text-2); margin: 0; }
+  .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+  /* ------------------------------------------------ app components */
+
+  .card {
+    background: var(--app-surface);
+    border: 1px solid var(--app-border);
+    border-radius: var(--r-lg);
+    padding: 16px;
+  }
+
+  .btn {
+    display: block;
+    width: 100%;
+    font: inherit;
+    font-size: var(--t-body);
+    font-weight: 650;
+    text-align: center;
+    padding: 15px 18px;
+    border-radius: var(--r-md);
+    border: 0;
+    background: var(--app-accent);
+    color: var(--app-on-accent);
+    cursor: default;
+  }
+
+  .btn.secondary {
+    background: var(--app-raised);
+    color: var(--app-text);
+    border: 1px solid var(--app-border);
+  }
+
+  .btn.ghost { background: none; color: var(--app-accent); font-weight: 600; }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 650;
+    padding: 4px 9px;
+    border-radius: 999px;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+  }
+
+  /* Safety state is never colour alone — always colour + glyph + word. */
+  .chip.green { background: var(--green-fill); color: var(--green-ink); }
+  .chip.yellow { background: var(--yellow-fill); color: var(--yellow-ink); }
+  .chip.red { background: var(--red-fill); color: var(--red-ink); }
+  .chip.neutral { background: var(--app-raised); color: var(--app-text-2); }
+  .chip .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex: none; }
+
+  .progress {
+    height: 5px;
+    border-radius: 999px;
+    background: var(--app-raised);
+    overflow: hidden;
+  }
+  .progress > i {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+    background: var(--app-accent);
+    transition: width 260ms cubic-bezier(0.33, 1, 0.68, 1);
+  }
+
+  .actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+
+  .action {
+    background: var(--app-surface);
+    border: 1px solid var(--app-border);
+    border-radius: var(--r-md);
+    padding: 14px 10px 12px;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 96px;
+    justify-content: space-between;
+  }
+
+  .action .ico { color: var(--app-accent); }
+  .action .lbl { font-size: var(--t-label); font-weight: 650; line-height: 1.25; }
+  .action .sub { font-size: 11px; color: var(--app-text-3); line-height: 1.3; }
+
+  .row { display: flex; align-items: center; gap: 12px; }
+
+  /* A project name is the thing the user recognises the job by, so it wraps to
+     two lines rather than truncating mid-word. */
+  .clamp2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .row.between { justify-content: space-between; }
+  .grow { flex: 1 1 auto; min-width: 0; }
+  .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .thumb {
+    width: 52px;
+    height: 52px;
+    border-radius: var(--r-md);
+    flex: none;
+    background:
+      linear-gradient(150deg, #4a4a52, #2a2a31 60%),
+      var(--app-raised);
+    border: 1px solid var(--app-border);
+    position: relative;
+    overflow: hidden;
+  }
+  .thumb::after {
+    content: "";
+    position: absolute;
+    inset: 30% 22% 46% 22%;
+    border: 1.5px solid var(--app-accent);
+    border-radius: 3px;
+  }
+  .thumb.wide { width: 64px; height: 44px; }
+
+  /* ------------------------------------------------ confidence meter */
+
+  .finding { display: flex; flex-direction: column; gap: 7px; padding: 12px 0; }
+  .finding + .finding { border-top: 1px solid var(--app-border); }
+  .finding .k { font-size: 11px; color: var(--app-text-3); letter-spacing: 0.03em; }
+  .finding .v { font-size: var(--t-body); font-weight: 600; }
+  .meter { display: flex; align-items: center; gap: 8px; }
+  .meter .track {
+    flex: 1 1 auto;
+    height: 4px;
+    border-radius: 999px;
+    background: var(--app-raised);
+    overflow: hidden;
+  }
+  .meter .track > i { display: block; height: 100%; border-radius: 999px; }
+  .meter .pct { font-family: var(--mono); font-size: 11px; color: var(--app-text-3); }
+  .fill-ok > i { background: var(--green); }
+  .fill-warn > i { background: var(--yellow); }
+  .fill-user > i { background: var(--app-accent); }
+
+  /* ------------------------------------------------ ask cards */
+
+  .ask {
+    border-radius: var(--r-lg);
+    padding: 14px;
+    border: 1px solid var(--app-border);
+    background: var(--app-surface);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .ask.attn { border-color: color-mix(in srgb, var(--yellow) 45%, transparent); }
+  .ask .q { font-size: var(--t-body); font-weight: 650; line-height: 1.35; }
+  /* The reason is the whole point: never ask without saying why. */
+  .ask .why { font-size: var(--t-label); color: var(--app-text-2); line-height: 1.45; }
+  .ask .opts { display: flex; gap: 6px; flex-wrap: wrap; }
+  .opt {
+    font: inherit;
+    font-size: var(--t-label);
+    font-weight: 600;
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: var(--app-raised);
+    color: var(--app-text);
+    border: 1px solid var(--app-border);
+  }
+  .opt.on { background: var(--app-accent-muted); color: var(--app-accent); border-color: transparent; }
+
+  /* ------------------------------------------------ timeline */
+
+  .timeline { display: flex; flex-direction: column; }
+
+  .step {
+    display: grid;
+    grid-template-columns: 26px minmax(0, 1fr);
+    gap: 12px;
+    padding: 0;
+    background: none;
+    border: 0;
+    font: inherit;
+    color: inherit;
+    text-align: left;
+    width: 100%;
+    cursor: pointer;
+  }
+
+  .rail { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+
+  .bead {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-size: 11px;
+    font-weight: 700;
+    flex: none;
+    background: var(--app-raised);
+    color: var(--app-text-3);
+    border: 1.5px solid var(--app-border);
+    transition: background 180ms ease, color 180ms ease, border-color 180ms ease;
+  }
+
+  .line { width: 1.5px; flex: 1 1 auto; background: var(--app-border); min-height: 18px; }
+
+  .step-body { padding-bottom: 16px; }
+  .step-title { display: block; font-size: var(--t-body); font-weight: 650; line-height: 1.35; }
+  .step-meta {
+    font-size: 11px;
+    color: var(--app-text-3);
+    margin-top: 3px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .step-detail {
+    font-size: var(--t-label);
+    line-height: 1.55;
+    color: var(--app-text-2);
+    margin-top: 9px;
+    display: none;
+  }
+  .step-verify {
+    margin-top: 9px;
+    font-size: var(--t-label);
+    line-height: 1.5;
+    padding: 9px 11px;
+    border-radius: var(--r-sm);
+    background: var(--app-raised);
+    color: var(--app-text-2);
+    display: none;
+  }
+  .step-verify b { color: var(--app-text); font-weight: 650; }
+
+  .step[aria-expanded="true"] .step-detail,
+  .step[aria-expanded="true"] .step-verify { display: block; }
+
+  .step[data-state="done"] .bead {
+    background: var(--green-fill);
+    color: var(--green);
+    border-color: color-mix(in srgb, var(--green) 55%, transparent);
+  }
+  .step[data-state="done"] .step-title { color: var(--app-text-2); }
+  .step[data-state="done"] .line { background: color-mix(in srgb, var(--green) 40%, transparent); }
+
+  .step[data-state="current"] .bead {
+    background: var(--app-accent);
+    color: var(--app-on-accent);
+    border-color: transparent;
+    box-shadow: 0 0 0 4px var(--app-accent-muted);
+  }
+
+  /* ------------------------------------------------ chat */
+
+  .msgs { display: flex; flex-direction: column; gap: 12px; padding-bottom: 8px; }
+
+  .bubble {
+    max-width: 84%;
+    padding: 11px 14px;
+    font-size: var(--t-body);
+    line-height: 1.48;
+    border-radius: var(--r-lg);
+  }
+  .bubble.me {
+    align-self: flex-end;
+    background: var(--app-accent-muted);
+    color: var(--app-text);
+    border-bottom-right-radius: 6px;
+  }
+  .bubble.ai {
+    align-self: flex-start;
+    background: var(--app-surface);
+    border: 1px solid var(--app-border);
+    border-bottom-left-radius: 6px;
+  }
+  .bubble .ref {
+    display: block;
+    margin-top: 9px;
+    padding-top: 8px;
+    border-top: 1px solid var(--app-border);
+    font-size: 11px;
+    color: var(--app-accent);
+    font-weight: 600;
+  }
+
+  .pin {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 12px;
+    background: var(--app-surface);
+    border: 1px solid var(--app-border);
+    border-radius: var(--r-md);
+    font-size: 11px;
+    color: var(--app-text-2);
+  }
+
+  .composer {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: var(--app-surface);
+    border: 1px solid var(--app-border);
+    border-radius: 999px;
+    color: var(--app-text-3);
+    font-size: var(--t-body);
+  }
+
+  /* ------------------------------------------------ capture */
+
+  .viewfinder {
+    position: relative;
+    flex: 1 1 auto;
+    background:
+      radial-gradient(90% 60% at 34% 26%, rgba(255, 250, 240, 0.16), transparent 68%),
+      radial-gradient(120% 100% at 50% 120%, rgba(0, 0, 0, 0.34), transparent 60%),
+      linear-gradient(168deg, #7d766c 0%, #6b645b 52%, #5a544c 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .vf-prompt {
+    margin: 14px;
+    padding: 12px 14px;
+    border-radius: var(--r-md);
+    background: rgba(11, 11, 15, 0.78);
+    backdrop-filter: blur(8px);
+    color: #F5F5F7;
+  }
+  .vf-prompt .t { font-size: var(--t-body); font-weight: 650; }
+  .vf-prompt .w { font-size: 11.5px; color: #A0A0AB; margin-top: 3px; line-height: 1.4; }
+
+  .reticle {
+    position: absolute;
+    inset: 34% 20% 38%;
+  }
+
+  .reticle i {
+    position: absolute;
+    width: 26px;
+    height: 26px;
+    border: 2px solid rgba(245, 245, 247, 0.85);
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
+  }
+  .reticle i:nth-child(1) { top: 0; left: 0; border-right: 0; border-bottom: 0; border-radius: 6px 0 0 0; }
+  .reticle i:nth-child(2) { top: 0; right: 0; border-left: 0; border-bottom: 0; border-radius: 0 6px 0 0; }
+  .reticle i:nth-child(3) { bottom: 0; left: 0; border-right: 0; border-top: 0; border-radius: 0 0 0 6px; }
+  .reticle i:nth-child(4) { bottom: 0; right: 0; border-left: 0; border-top: 0; border-radius: 0 0 6px 0; }
+  .reticle span {
+    position: absolute;
+    left: 50%;
+    top: -26px;
+    transform: translateX(-50%);
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+    font-size: 10.5px;
+    color: rgba(245, 245, 247, 0.8);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .tray {
+    padding: 12px 14px 16px;
+    background: linear-gradient(180deg, transparent, rgba(11, 11, 15, 0.86) 34%, rgba(11, 11, 15, 0.96) 100%);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .shots { display: flex; gap: 8px; }
+  .shot {
+    flex: 1 1 0;
+    aspect-ratio: 1;
+    border-radius: var(--r-sm);
+    background: rgba(11, 11, 15, 0.55);
+    border: 1px solid rgba(245, 245, 247, 0.26);
+    display: grid;
+    place-items: center;
+    font-size: 9.5px;
+    text-align: center;
+    color: rgba(245, 245, 247, 0.75);
+    letter-spacing: 0.03em;
+    padding: 2px;
+    position: relative;
+  }
+  .shot.got {
+    background: var(--green-fill);
+    border-color: color-mix(in srgb, var(--green) 60%, transparent);
+    color: var(--green);
+    font-weight: 650;
+  }
+  .shot.next { border-style: dashed; border-color: rgba(245, 245, 247, 0.45); }
+
+  /* ------------------------------------------------ step photo */
+
+  .photo {
+    width: 100%;
+    display: block;
+    border-radius: var(--r-md);
+    border: 1px solid var(--app-border);
+  }
+
+  .photo-alt {
+    font-size: 11px;
+    color: var(--app-text-3);
+    line-height: 1.45;
+    margin-top: 8px;
+    padding-left: 10px;
+    border-left: 1.5px solid var(--app-border);
+  }
+
+  /* ------------------------------------------------ safety notice */
+
+  .notice {
+    border-radius: var(--r-lg);
+    padding: 16px;
+    background: var(--red-fill);
+    border: 1px solid color-mix(in srgb, var(--red) 45%, transparent);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .notice .hd { display: flex; align-items: flex-start; gap: 8px; }
+  .notice .hd svg { flex: none; margin-top: 3px; }
+  .notice .hd b { font-size: var(--t-body-lg); font-weight: 700; color: var(--red-ink); }
+  .notice p { margin: 0; font-size: var(--t-label); line-height: 1.55; color: var(--app-text); }
+  .notice .locked {
+    font-size: 11px;
+    color: var(--app-text-2);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .caution {
+    border-radius: var(--r-lg);
+    padding: 14px;
+    background: var(--yellow-fill);
+    border: 1px solid color-mix(in srgb, var(--yellow) 40%, transparent);
+  }
+  .caution b { color: var(--yellow-ink); font-size: var(--t-label); font-weight: 700; }
+  .caution ul { margin: 8px 0 0; padding-left: 18px; font-size: var(--t-label); line-height: 1.55; color: var(--app-text); }
+  .caution li + li { margin-top: 5px; }
+
+  .asklist { display: flex; flex-direction: column; gap: 8px; }
+  .asklist div {
+    font-size: var(--t-label);
+    line-height: 1.45;
+    padding-left: 16px;
+    position: relative;
+    color: var(--app-text);
+  }
+  .asklist div::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 8px;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--red);
+  }
+
+  /* ------------------------------------------------ tab bar */
+
+  .tabbar {
+    flex: none;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    padding: 10px 6px 14px;
+    border-top: 1px solid var(--app-border);
+    background: var(--app-canvas);
+    position: relative;
+    /* Above the scroll fade, so the bar and its FAB stay at full strength. */
+    z-index: 2;
+  }
+
+  .tab {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    font-size: 9.5px;
+    font-weight: 600;
+    color: var(--app-text-3);
+    letter-spacing: 0.02em;
+  }
+  .tab.on { color: var(--app-accent); }
+
+  .fab {
+    position: absolute;
+    top: -26px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: var(--app-accent);
+    color: var(--app-on-accent);
+    display: grid;
+    place-items: center;
+    box-shadow: 0 10px 26px -6px color-mix(in srgb, var(--app-accent) 70%, transparent);
+    border: 3px solid var(--app-canvas);
+  }
+  .tabbar.with-fab .tab:nth-child(3) { visibility: hidden; }
+
+  /* ---------------------------------------------------------------- footer */
+
+  .tokens {
+    margin-top: 64px;
+    padding-top: 40px;
+    border-top: 1px solid var(--page-rule);
+  }
+
+  .swatches {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 20px;
+  }
+
+  .sw {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 8px 12px 8px 9px;
+    border: 1px solid var(--page-rule);
+    border-radius: 999px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--page-text-2);
+  }
+  .sw i { width: 15px; height: 15px; border-radius: 4px; flex: none; }
+
+  .foot {
+    margin-top: 44px;
+    font-size: var(--t-label);
+    line-height: 1.65;
+    color: var(--page-text-3);
+    max-width: 68ch;
+  }
+  .foot code {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--page-text-2);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+
+  @media (max-width: 900px) {
+    .stage,
+    .stage:nth-of-type(even) { grid-template-columns: minmax(0, 1fr); gap: 28px; }
+    .stage:nth-of-type(even) .note { order: 1; }
+    .stage:nth-of-type(even) .phone-slot { order: 2; }
+    .controls { position: static; }
+    .wrap { padding: 36px 18px 72px; }
+  }
+</style>
+
+<div class="wrap">
+
+  <p class="eyebrow">HandyAI · Interface prototype · 7 screens</p>
+  <h1>The screens are mostly about what the app refuses to guess.</h1>
+  <p class="standfirst">
+    A person photographs the TV, the mount and the wall. Everything after that is
+    an argument about certainty: what the system read, how sure it is, what it
+    still needs, and when it should stop being helpful and tell them to call
+    someone. <strong>That argument is the interface</strong> — which is why the
+    confidence meters and the safety notice are the load-bearing components here,
+    not the chrome around them.
+  </p>
+  <p class="standfirst">
+    Every colour, size, radius and duration below is read from
+    <code style="font-family:var(--mono);font-size:12.5px">docs/05-design-system.md</code>,
+    so this prototype and the Flutter theme cannot drift apart.
+  </p>
+
+  <p class="caveat">
+    <strong>What this is:</strong> a working HTML prototype of the specified
+    interface, built to be judged before the Flutter code is written. The step
+    photo in stage 05 is genuine output from the backend's annotation renderer —
+    not a mock-up. Everything else is presentation: no live data, and the Flutter
+    app does not exist yet.
+  </p>
+
+  <div class="controls">
+    <span class="controls-label">App theme</span>
+    <div class="seg" role="group" aria-label="App theme">
+      <button type="button" id="t-dark" aria-pressed="true">Dark</button>
+      <button type="button" id="t-light" aria-pressed="false">Light</button>
+    </div>
+    <span class="controls-label" style="margin-left:auto">Dark is primary · light is fully supported</span>
+  </div>
+
+  <div class="reel" id="reel" data-app="dark">
+
+    <!-- ============================================ 01 HOME -->
+    <section class="stage">
+      <div class="note">
+        <div class="marker"><span class="n">01</span><span class="k">Home</span></div>
+        <h2>One decision per screen, and the camera one tap away</h2>
+        <p>
+          The fastest path from “I have a thing to hang” to a photograph is the
+          product. So the resume card sits above everything — a half-finished job
+          is the most likely reason someone opened the app — and the three
+          workflows are the only other choice on offer.
+        </p>
+        <p>
+          Recent jobs carry their safety class as a chip. <em>Colour never
+          carries state alone:</em> every chip pairs the colour with a dot and a
+          word, so it survives colour blindness and a screenshot in greyscale.
+        </p>
+        <div class="decides">
+          <b>What the system is doing</b>
+          Reading <code>GET /v1/projects</code> and the resume pointer. No model
+          call yet — nothing has been photographed.
+        </div>
+      </div>
+
+      <div class="phone-slot">
+        <div class="phone">
+          <div class="screen faded has-tabs">
+            <div class="statusbar">
+              <span>9:41</span>
+              <span class="glyphs" aria-hidden="true">
+                <i class="bar" style="height:5px"></i><i class="bar" style="height:7px"></i><i class="bar" style="height:9px"></i><i class="bar" style="height:11px"></i>
+                <span style="margin-left:5px">100%</span>
+              </span>
+            </div>
+
+            <div class="body scrolls">
+              <div>
+                <div class="greeting">Tuesday evening</div>
+                <div class="h-screen">What are we<br>doing?</div>
+              </div>
+
+              <div class="card" style="display:flex;flex-direction:column;gap:12px">
+                <div class="row">
+                  <div class="thumb" aria-hidden="true"></div>
+                  <div class="grow">
+                    <div style="font-weight:650;font-size:var(--t-body)" class="clamp2">55" TV on plasterboard</div>
+                    <div style="font-size:11px;color:var(--app-text-3);margin-top:2px">Living room · started 40 min ago</div>
+                  </div>
+                  <span class="chip yellow"><i class="dot"></i>Care</span>
+                </div>
+                <div class="progress"><i style="width:44%"></i></div>
+                <div class="row between">
+                  <span style="font-size:11px;color:var(--app-text-3)" class="mono">Step 4 of 9</span>
+                  <span style="font-size:var(--t-label);font-weight:650;color:var(--app-accent)">Resume →</span>
+                </div>
+              </div>
+
+              <div class="actions">
+                <div class="action">
+                  <svg class="ico" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+                  <div>
+                    <div class="lbl">Install</div>
+                    <div class="sub">Mount it</div>
+                  </div>
+                </div>
+                <div class="action">
+                  <svg class="ico" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M14.5 5.5a3.5 3.5 0 0 0 4.6 4.6l-9 9a3.5 3.5 0 0 1-4.6-4.6z"/><path d="M5 19l-1 1"/></svg>
+                  <div>
+                    <div class="lbl">Repair</div>
+                    <div class="sub">Fix it</div>
+                  </div>
+                </div>
+                <div class="action">
+                  <svg class="ico" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M16 16l4 4"/></svg>
+                  <div>
+                    <div class="lbl">Advise</div>
+                    <div class="sub">Before I buy</div>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <div class="h-sec">Recent</div>
+                <div style="display:flex;flex-direction:column;gap:8px">
+                  <div class="card" style="padding:12px">
+                    <div class="row">
+                      <div class="thumb wide" aria-hidden="true"></div>
+                      <div class="grow">
+                        <div style="font-weight:600;font-size:var(--t-label)" class="clamp2">Blackout blind, bay window</div>
+                        <div style="font-size:11px;color:var(--app-text-3);margin-top:2px">Completed · 9 steps</div>
+                      </div>
+                      <span class="chip green"><i class="dot"></i>Safe</span>
+                    </div>
+                  </div>
+                  <div class="card" style="padding:12px">
+                    <div class="row">
+                      <div class="thumb wide" aria-hidden="true"></div>
+                      <div class="grow">
+                        <div style="font-weight:600;font-size:var(--t-label)" class="clamp2">Extractor fan, bathroom</div>
+                        <div style="font-size:11px;color:var(--app-text-3);margin-top:2px">Referred to an electrician</div>
+                      </div>
+                      <span class="chip red"><i class="dot"></i>Pro</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div style="height:34px"></div>
+            </div>
+
+            <div class="tabbar with-fab">
+              <div class="tab on"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z"/></svg>Home</div>
+              <div class="tab"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 10h8M8 14h5"/></svg>Projects</div>
+              <div class="tab">Scan</div>
+              <div class="tab"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path d="M12 3a9 9 0 1 1-9 9"/><path d="M3 12V7M3 7h5"/></svg>History</div>
+              <div class="tab"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><circle cx="12" cy="8" r="3.6"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>Profile</div>
+              <div class="fab" aria-hidden="true">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2L9 5h6l1.5 2h2A1.5 1.5 0 0 1 20 8.5v8A1.5 1.5 0 0 1 18.5 18h-13A1.5 1.5 0 0 1 4 16.5z"/><circle cx="12" cy="12.5" r="3"/></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================ 02 CAPTURE -->
+    <section class="stage">
+      <div class="note">
+        <div class="marker"><span class="n">02</span><span class="k">Capture</span></div>
+        <h2>The app says what it needs and when it has enough</h2>
+        <p>
+          Guided capture beats a free-for-all camera, because the analysis is only
+          as good as its worst photo. One line at the top names the shot and
+          <em>why it matters</em>. The tray shows what's banked and what's still
+          missing.
+        </p>
+        <p>
+          “Analyse” only lights up once the required roles are covered — the app
+          tells the user it has enough rather than making them guess and get
+          asked for more later.
+        </p>
+        <div class="decides">
+          <b>What the system is doing</b>
+          Compressing to ≤ 2048 px, stripping EXIF including GPS
+          <em>before</em> anything leaves the device, and uploading in the
+          background so a lock-screen doesn't lose the job.
+        </div>
+      </div>
+
+      <div class="phone-slot">
+        <div class="phone">
+          <div class="screen">
+            <div class="statusbar">
+              <span>9:44</span>
+              <span class="glyphs" aria-hidden="true">
+                <i class="bar" style="height:5px"></i><i class="bar" style="height:7px"></i><i class="bar" style="height:9px"></i><i class="bar" style="height:11px"></i>
+                <span style="margin-left:5px">99%</span>
+              </span>
+            </div>
+
+            <div class="body flush">
+              <div class="viewfinder">
+                <div class="vf-prompt">
+                  <div class="t">Now the wall, up close</div>
+                  <div class="w">Get within about 30 cm. Drywall, plaster and masonry each need a different anchor, and we won't guess which one this is.</div>
+                </div>
+
+                <div class="reticle" aria-hidden="true">
+                  <i></i><i></i><i></i><i></i>
+                  <span>Fill the frame with the wall</span>
+                </div>
+
+                <div class="tray">
+                  <div class="shots">
+                    <div class="shot got">TV<br>✓</div>
+                    <div class="shot got">Mount<br>✓</div>
+                    <div class="shot got">Label<br>✓</div>
+                    <div class="shot next">Wall<br>now</div>
+                    <div class="shot">Room</div>
+                  </div>
+                  <button class="btn" type="button">Analyse 4 photos</button>
+                  <div style="text-align:center;font-size:11px;color:rgba(245,245,247,0.66)">
+                    That's enough to start — the room shot is optional
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================ 03 CONFIRM -->
+    <section class="stage">
+      <div class="note">
+        <div class="marker"><span class="n">03</span><span class="k">Confirm what I saw</span></div>
+        <h2>The screen that turns the worst failure into a five-second fix</h2>
+        <p>
+          Silent misidentification is the failure mode that makes everything
+          downstream confidently wrong. So identification is shown as an
+          <em>editable fact with a confidence bar</em>, never hidden state. The
+          user corrected the model number here; that correction is certain by
+          definition and no later re-analysis can overwrite it.
+        </p>
+        <p>
+          The weight came back at 62%, under its 80% threshold — and weight
+          decides which anchor is safe. So the app asks for the label, and says
+          why. After two rounds of asking for photos it stops and asks a direct
+          question instead: an endless “one more photo” loop is a worse failure
+          than a question.
+        </p>
+        <div class="decides">
+          <b>What the system is doing</b>
+          The confidence gate in <code>analysis_service.py</code> — thresholds
+          are per-field and higher for anything load-bearing. Nothing generates a
+          guide while a safety-critical field is short.
+        </div>
+      </div>
+
+      <div class="phone-slot">
+        <div class="phone">
+          <div class="screen faded">
+            <div class="statusbar">
+              <span>9:45</span>
+              <span class="glyphs" aria-hidden="true">
+                <i class="bar" style="height:5px"></i><i class="bar" style="height:7px"></i><i class="bar" style="height:9px"></i><i class="bar" style="height:11px"></i>
+                <span style="margin-left:5px">99%</span>
+              </span>
+            </div>
+
+            <div class="body scrolls">
+              <div>
+                <div class="greeting">Analysis complete · 11 s</div>
+                <div class="h-screen">Here's what<br>I can see</div>
+              </div>
+
+              <div class="card" style="padding:4px 16px">
+                <div class="finding">
+                  <div class="k">Product</div>
+                  <div class="v">Samsung UN55TU8000</div>
+                  <div class="meter">
+                    <div class="track fill-user"><i style="width:100%"></i></div>
+                    <span class="pct">you</span>
+                  </div>
+                </div>
+
+                <div class="finding">
+                  <div class="k">Weight</div>
+                  <div class="row between">
+                    <div class="v" style="color:var(--yellow-ink)">Couldn't read it</div>
+                    <span class="chip yellow"><i class="dot"></i>Needed</span>
+                  </div>
+                  <div class="meter">
+                    <div class="track fill-warn"><i style="width:62%"></i></div>
+                    <span class="pct">62%</span>
+                  </div>
+                </div>
+
+                <div class="finding">
+                  <div class="k">Wall</div>
+                  <div class="v">Plasterboard, 12.5 mm</div>
+                  <div class="meter">
+                    <div class="track fill-ok"><i style="width:89%"></i></div>
+                    <span class="pct">89%</span>
+                  </div>
+                </div>
+
+                <div class="finding">
+                  <div class="k">Mount · rated 45 kg</div>
+                  <div class="v">Tilting · VESA 400×400</div>
+                  <div class="meter">
+                    <div class="track fill-ok"><i style="width:87%"></i></div>
+                    <span class="pct">87%</span>
+                  </div>
+                </div>
+
+                <div class="finding">
+                  <div class="k">Behind the wall</div>
+                  <div class="v">Cable run above the socket</div>
+                  <div class="meter">
+                    <div class="track fill-warn"><i style="width:74%"></i></div>
+                    <span class="pct">74%</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="ask attn">
+                <div class="row" style="gap:9px">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--yellow-ink)" stroke-width="2" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="2"/><circle cx="12" cy="12.5" r="3.4"/></svg>
+                  <div class="q grow">One more photo: the label on the back</div>
+                </div>
+                <div class="why">
+                  The weight decides which anchor is safe, so we won't estimate
+                  it. It's usually on a sticker near the cable inputs.
+                </div>
+                <button class="btn" type="button" style="padding:12px">Open camera</button>
+                <button class="btn ghost" type="button" style="padding:4px">I'll type it instead</button>
+              </div>
+
+              <div class="ask">
+                <div class="q">Is there an outlet behind the TV position?</div>
+                <div class="why">It changes the cable-management step, and whether we route in front of the wall or behind it.</div>
+                <div class="opts">
+                  <button class="opt on" type="button">Yes</button>
+                  <button class="opt" type="button">No</button>
+                  <button class="opt" type="button">Not sure</button>
+                </div>
+              </div>
+
+              <div style="height:6px"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================ 04 PROJECT -->
+    <section class="stage">
+      <div class="note">
+        <div class="marker"><span class="n">04</span><span class="k">Project · amber</span></div>
+        <h2>Amber means: doable, but a mistake here costs you</h2>
+        <p>
+          The classification is computed by rules, not written by the model. This
+          job is amber because 15.4 kg on plasterboard sits at roughly 75% of what
+          the best cavity anchor will hold — with a 1.25 safety factor applied in
+          code, where no prompt can talk it down.
+        </p>
+        <p>
+          The pre-flight checklist has to be acknowledged before step 1 opens.
+          <em>Tap any step</em> to expand it, and the checkbox to complete it — the
+          rail fills green behind you and the guide freezes, so nothing shifts
+          under someone halfway through a job.
+        </p>
+        <div class="decides">
+          <b>What the system is doing</b>
+          <code>SafetyClassifier</code> returned <code>load_near_material_limit</code>
+          and picked the fixing: a metal cavity toggle at ~18 kg. The model is
+          allowed to phrase that, not to change it.
+        </div>
+      </div>
+
+      <div class="phone-slot">
+        <div class="phone">
+          <div class="screen faded">
+            <div class="statusbar">
+              <span>9:52</span>
+              <span class="glyphs" aria-hidden="true">
+                <i class="bar" style="height:5px"></i><i class="bar" style="height:7px"></i><i class="bar" style="height:9px"></i><i class="bar" style="height:11px"></i>
+                <span style="margin-left:5px">98%</span>
+              </span>
+            </div>
+
+            <div class="body scrolls">
+              <div>
+                <div class="row between" style="margin-bottom:8px">
+                  <span class="chip yellow"><i class="dot"></i>Proceed carefully</span>
+                  <span class="chip neutral">Moderate · 50 min</span>
+                </div>
+                <div class="h-screen" style="font-size:var(--t-title)">Mount the 55" TV on plasterboard</div>
+              </div>
+
+              <div class="caution">
+                <b>⚠ Before you start</b>
+                <ul>
+                  <li>15.4 kg is heavy for plasterboard. Use the metal toggle we specify, in <strong>every</strong> hole.</li>
+                  <li>A cable runs above the socket. Scan before you drill.</li>
+                  <li>Two people for the lift.</li>
+                </ul>
+              </div>
+
+              <div class="row between">
+                <div class="grow" style="margin-right:12px">
+                  <div class="progress"><i id="bar" style="width:33%"></i></div>
+                </div>
+                <span class="mono" style="font-size:11px;color:var(--app-text-3)" id="count">3 of 9 done</span>
+              </div>
+
+              <div class="timeline" id="timeline">
+                <button class="step" data-state="done" aria-expanded="false" type="button">
+                  <span class="rail"><span class="bead">✓</span><span class="line"></span></span>
+                  <span class="step-body">
+                    <span class="step-title">Check the parts against the list</span>
+                    <span class="step-meta">5 min · complete</span>
+                  </span>
+                </button>
+
+                <button class="step" data-state="done" aria-expanded="false" type="button">
+                  <span class="rail"><span class="bead">✓</span><span class="line"></span></span>
+                  <span class="step-body">
+                    <span class="step-title">Find the studs and mark them</span>
+                    <span class="step-meta">10 min · complete</span>
+                  </span>
+                </button>
+
+                <button class="step" data-state="done" aria-expanded="false" type="button">
+                  <span class="rail"><span class="bead">✓</span><span class="line"></span></span>
+                  <span class="step-body">
+                    <span class="step-title">Scan for cables and pipes</span>
+                    <span class="step-meta">5 min · complete</span>
+                  </span>
+                </button>
+
+                <button class="step" data-state="current" aria-expanded="true" type="button">
+                  <span class="rail"><span class="bead">4</span><span class="line"></span></span>
+                  <span class="step-body">
+                    <span class="step-title">Mark the four fixing centres</span>
+                    <span class="step-meta">
+                      10 min
+                      <span class="chip yellow" style="font-size:10px"><i class="dot"></i>Care</span>
+                    </span>
+                    <span class="step-detail">
+                      Hold the plate against the wall at the height you want, level
+                      it, and mark through all four holes. The upper pair land
+                      400 mm apart — keep them clear of the cable zone above the
+                      socket.
+                    </span>
+                    <span class="step-verify"><b>You'll know it worked:</b> all four marks are level and none sit within 150 mm of the socket.</span>
+                  </span>
+                </button>
+
+                <button class="step" data-state="pending" aria-expanded="false" type="button">
+                  <span class="rail"><span class="bead">5</span><span class="line"></span></span>
+                  <span class="step-body">
+                    <span class="step-title">Drill the 12 mm holes</span>
+                    <span class="step-meta">10 min</span>
+                    <span class="step-detail">
+                      Low speed, no hammer action — plasterboard tears if you rush
+                      it. Keep the drill square to the wall.
+                    </span>
+                    <span class="step-verify"><b>You'll know it worked:</b> the holes are clean and square, and the toggle passes through without forcing.</span>
+                  </span>
+                </button>
+
+                <button class="step" data-state="pending" aria-expanded="false" type="button">
+                  <span class="rail"><span class="bead">6</span><span class="line"></span></span>
+                  <span class="step-body">
+                    <span class="step-title">Set the metal toggles</span>
+                    <span class="step-meta">10 min · load-bearing</span>
+                    <span class="step-detail">
+                      Fold, push through, then pull back until the toggle sits flat
+                      against the back of the board. Don't over-tighten — a
+                      stripped anchor loses most of its hold.
+                    </span>
+                    <span class="step-verify"><b>You'll know it worked:</b> the toggle doesn't spin, and the plate won't move when you pull hard on it.</span>
+                  </span>
+                </button>
+
+                <button class="step" data-state="pending" aria-expanded="false" type="button">
+                  <span class="rail"><span class="bead">7</span><span class="line"></span></span>
+                  <span class="step-body">
+                    <span class="step-title">Bolt the plate to the wall</span>
+                    <span class="step-meta">10 min</span>
+                    <span class="step-detail">Tighten diagonally across the holes rather than one side at a time, so the plate pulls in evenly.</span>
+                    <span class="step-verify"><b>You'll know it worked:</b> still level, and no movement under a firm pull.</span>
+                  </span>
+                </button>
+
+                <button class="step" data-state="pending" aria-expanded="false" type="button">
+                  <span class="rail"><span class="bead">8</span><span class="line"></span></span>
+                  <span class="step-body">
+                    <span class="step-title">Fit the brackets to the TV</span>
+                    <span class="step-meta">5 min</span>
+                    <span class="step-detail">M8 bolts into the VESA 400×400 pattern. Snug, not forced — the threads are in a plastic housing.</span>
+                    <span class="step-verify"><b>You'll know it worked:</b> both arms sit flush with no rocking.</span>
+                  </span>
+                </button>
+
+                <button class="step" data-state="pending" aria-expanded="false" type="button">
+                  <span class="rail"><span class="bead">9</span></span>
+                  <span class="step-body">
+                    <span class="step-title">Lift on and lock the catches</span>
+                    <span class="step-meta">5 min · two people</span>
+                    <span class="step-detail">Engage both brackets fully and check the catches are home before anyone lets go.</span>
+                    <span class="step-verify"><b>You'll know it worked:</b> the catches click, and the TV doesn't lift off the plate.</span>
+                  </span>
+                </button>
+              </div>
+
+              <div style="height:8px"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================ 05 STEP + PHOTO -->
+    <section class="stage">
+      <div class="note">
+        <div class="marker"><span class="n">05</span><span class="k">Step · annotated</span></div>
+        <h2>Their wall, marked up — not a stock diagram of someone else's</h2>
+        <p>
+          <em>This image is real output from the backend.</em> The vision model
+          returns coordinates and labels; the server draws the arrows, drill marks
+          and measurement itself with Pillow. That's about a hundred times cheaper
+          than generative image editing, it's byte-for-byte reproducible, and it
+          physically cannot invent hardware that isn't in the photograph.
+        </p>
+        <p>
+          Each mark also emits a sentence of alt text, so the overlay reads aloud
+          for a screen reader instead of being a picture with nothing in it.
+        </p>
+        <div class="decides">
+          <b>What the system is doing</b>
+          <code>DeterministicAnnotator</code> composites five marks; the
+          measurement and the cable-zone warning both trace back to cited
+          reference data, not to model prose.
+        </div>
+      </div>
+
+      <div class="phone-slot">
+        <div class="phone">
+          <div class="screen faded">
+            <div class="statusbar">
+              <span>10:03</span>
+              <span class="glyphs" aria-hidden="true">
+                <i class="bar" style="height:5px"></i><i class="bar" style="height:7px"></i><i class="bar" style="height:9px"></i><i class="bar" style="height:11px"></i>
+                <span style="margin-left:5px">96%</span>
+              </span>
+            </div>
+
+            <div class="body scrolls">
+              <div class="row between">
+                <span class="chip neutral">Step 4 of 9</span>
+                <span class="chip yellow"><i class="dot"></i>Care</span>
+              </div>
+
+              <div>
+                <div style="font-size:var(--t-title);font-weight:650;line-height:1.25;letter-spacing:-0.01em">Mark the four fixing centres</div>
+                <div style="font-size:11px;color:var(--app-text-3);margin-top:5px">10 min · spirit level, pencil, detector</div>
+              </div>
+
+              <div>
+                <img class="photo" alt="Your wall with the mount plate area boxed, all four fixing points numbered and 400 mm marked between the left and right centres, and an arrow to the cable zone above the socket labelled do not drill" src="data:image/webp;base64,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">
+                <div class="photo-alt">
+                  Drawn on your photo · 7 marks · tap to zoom
+                </div>
+              </div>
+
+              <p class="p-app" style="font-size:var(--t-body-lg);line-height:1.6;color:var(--app-text)">
+                Hold the plate against the wall at the height you want and level it,
+                then mark through all four holes. The upper pair land 400 mm apart.
+              </p>
+
+              <div class="step-verify" style="display:block;margin:0">
+                <b>You'll know it worked:</b> all four marks are level, and none
+                sit within 150 mm of the socket.
+              </div>
+
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <button class="btn secondary" type="button">Photograph your marks</button>
+                <button class="btn" type="button">Mark step complete</button>
+              </div>
+
+              <div style="height:8px"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================ 06 ASSISTANT -->
+    <section class="stage">
+      <div class="note">
+        <div class="marker"><span class="n">06</span><span class="k">Assistant</span></div>
+        <h2>“I can't tell from this photo” is a feature</h2>
+        <p>
+          The assistant is grounded: the project's analysis, the active guide and
+          the current step are pinned into every request, and the client never
+          sends a system prompt. Ask about the screw in your hand and it answers
+          about <em>this</em> job.
+        </p>
+        <p>
+          It is also prompted and tested to refuse a verdict it can't support.
+          Confident wrong reassurance — “yes, that looks fine” about a fixing
+          that's about to pull out of a wall — is the most damaging thing this
+          product could say, so the interface treats an honest “I can't see
+          enough” as a first-class answer with a way forward.
+        </p>
+        <div class="decides">
+          <b>What the system is doing</b>
+          Streaming over SSE with the step context assembled server-side.
+          Verdict came back <code>unsure</code>, so no judgement is rendered —
+          just a specific ask.
+        </div>
+      </div>
+
+      <div class="phone-slot">
+        <div class="phone">
+          <div class="screen faded has-composer">
+            <div class="statusbar">
+              <span>10:11</span>
+              <span class="glyphs" aria-hidden="true">
+                <i class="bar" style="height:5px"></i><i class="bar" style="height:7px"></i><i class="bar" style="height:9px"></i><i class="bar" style="height:11px"></i>
+                <span style="margin-left:5px">94%</span>
+              </span>
+            </div>
+
+            <div class="body scrolls">
+              <div class="pin">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--app-accent)" stroke-width="2.2" aria-hidden="true"><path d="M12 3v10M12 21l-4-5h8z"/></svg>
+                <span class="truncate grow">55" TV on plasterboard · step 4</span>
+                <span class="chip yellow" style="font-size:10px"><i class="dot"></i>Care</span>
+              </div>
+
+              <div class="msgs">
+                <div class="bubble me">Is this the right screw for the toggle?</div>
+
+                <div class="bubble me" style="padding:5px;background:none;max-width:60%">
+                  <div style="aspect-ratio:4/3;border-radius:var(--r-md);background:linear-gradient(140deg,#59565f,#2b2a31);border:1px solid var(--app-border);display:grid;place-items:center;color:var(--app-text-3);font-size:10.5px">
+                    photo
+                  </div>
+                </div>
+
+                <div class="bubble ai">
+                  I can't tell from this photo — the thread is out of frame, and
+                  thread pitch is the thing that matters here. Lay it flat next to
+                  the toggle body and shoot straight down, and I'll check it
+                  against the M8 the mount needs.
+                  <span class="ref">↳ Step 6 · Set the metal toggles</span>
+                </div>
+
+                <div class="bubble me">It's the one from the mount box</div>
+
+                <div class="bubble ai">
+                  Then it's almost certainly right — the mount ships M8×20 for the
+                  plate. Two things worth checking before you commit: it should
+                  turn freely by hand for the first few threads, and you should
+                  have four of them. If you only have three, stop and get a
+                  matching one rather than substituting.
+                  <span class="ref">↳ Missing hardware is a red-line check</span>
+                </div>
+              </div>
+
+              <div style="height:4px"></div>
+            </div>
+
+            <div style="padding:0 16px 16px">
+              <div class="composer">
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="2"/><circle cx="12" cy="12.5" r="3.4"/></svg>
+                <span class="grow">Ask about this step…</span>
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M12 18v3M8 21h8M5 11a7 7 0 0 0 14 0"/></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================ 07 RED -->
+    <section class="stage">
+      <div class="note">
+        <div class="marker"><span class="n">07</span><span class="k">Referral · red</span></div>
+        <h2>The screen where the product stops selling itself</h2>
+        <p>
+          Seven categories are hard red lines: mains electrical, gas, water mains,
+          structural, work above about two metres, anything heavy overhead, and
+          asbestos-era surfaces. This bathroom fan is on the electrical one.
+        </p>
+        <p>
+          The notice can't be dismissed and the step-by-step flow is withheld —
+          not the information. The user still gets what the job involves, what to
+          ask the electrician, and a cost expectation so they aren't walking in
+          blind. <em>Withholding the walkthrough while still being useful</em> is
+          the whole design of this screen.
+        </p>
+        <div class="decides">
+          <b>What the system is doing</b>
+          <code>electrical_mains</code> fired, so the guide is generated but
+          served read-only. The referral copy is human-written and version
+          controlled — a model never drafts a red-line warning.
+        </div>
+      </div>
+
+      <div class="phone-slot">
+        <div class="phone">
+          <div class="screen faded">
+            <div class="statusbar">
+              <span>10:26</span>
+              <span class="glyphs" aria-hidden="true">
+                <i class="bar" style="height:5px"></i><i class="bar" style="height:7px"></i><i class="bar" style="height:9px"></i><i class="bar" style="height:11px"></i>
+                <span style="margin-left:5px">92%</span>
+              </span>
+            </div>
+
+            <div class="body scrolls">
+              <div>
+                <div class="row between" style="margin-bottom:8px">
+                  <span class="chip red"><i class="dot"></i>Professional recommended</span>
+                </div>
+                <div class="h-screen" style="font-size:var(--t-title)">Bathroom extractor fan</div>
+              </div>
+
+              <div class="notice">
+                <div class="hd">
+                  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="var(--red-ink)" stroke-width="2.2" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17h.01"/></svg>
+                  <b>This needs an electrician</b>
+                </div>
+                <p>
+                  The fan is wired into the lighting circuit and sits in a bathroom
+                  zone. That's regulated work in most places, and a mistake here
+                  causes a fire or a shock in a wet room — not a wonky shelf.
+                </p>
+                <div class="locked">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+                  Step-by-step is turned off for this job
+                </div>
+              </div>
+
+              <div>
+                <div class="h-sec">What to ask them</div>
+                <div class="asklist">
+                  <div>Is the existing circuit suitable, or does it need its own supply?</div>
+                  <div>Which IP rating does this zone need?</div>
+                  <div>Will you supply a certificate for the work?</div>
+                  <div>Is the duct run to the outside wall already in place?</div>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="row between">
+                  <div>
+                    <div style="font-size:11px;color:var(--app-text-3)">Typical cost</div>
+                    <div style="font-weight:650;font-size:var(--t-body-lg);margin-top:2px" class="mono">£180 – £320</div>
+                  </div>
+                  <div style="text-align:right">
+                    <div style="font-size:11px;color:var(--app-text-3)">Time on site</div>
+                    <div style="font-weight:650;font-size:var(--t-body-lg);margin-top:2px" class="mono">2 – 3 h</div>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <div class="h-sec">You can still do this part</div>
+                <div class="card" style="padding:13px">
+                  <div class="row">
+                    <span class="chip green"><i class="dot"></i>Safe</span>
+                    <span class="grow" style="font-size:var(--t-label);line-height:1.4">Clear the loft space above the run and measure the duct</span>
+                  </div>
+                </div>
+              </div>
+
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <button class="btn secondary" type="button">Read what the job involves</button>
+                <button class="btn ghost" type="button" style="padding:6px">Save for later</button>
+              </div>
+
+              <div style="height:8px"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- ============================================ tokens -->
+  <section class="tokens">
+    <p class="eyebrow">Tokens in use</p>
+    <h2 style="font-size:var(--t-title);font-weight:650;margin:0 0 10px;letter-spacing:-0.016em">Semantic names only — no component references a raw hex</h2>
+    <p style="color:var(--page-text-2);max-width:60ch;margin:0">
+      Which is what lets the theme switch above work at all, and what will keep
+      the Flutter theme honest: a custom lint fails the build on a hardcoded
+      colour, size or duration in feature code.
+    </p>
+
+    <div class="swatches">
+      <span class="sw"><i style="background:#0B0B0F;border:1px solid rgba(255,255,255,.2)"></i>bg.canvas</span>
+      <span class="sw"><i style="background:#14141A;border:1px solid rgba(255,255,255,.2)"></i>bg.surface</span>
+      <span class="sw"><i style="background:#1C1C24;border:1px solid rgba(255,255,255,.2)"></i>bg.surfaceRaised</span>
+      <span class="sw"><i style="background:#F5F5F7"></i>text.primary</span>
+      <span class="sw"><i style="background:#A0A0AB"></i>text.secondary</span>
+      <span class="sw"><i style="background:#3D7BFF"></i>accent.primary</span>
+      <span class="sw"><i style="background:#22C55E"></i>safety.green</span>
+      <span class="sw"><i style="background:#F5A524"></i>safety.yellow</span>
+      <span class="sw"><i style="background:#EF4444"></i>safety.red</span>
+    </div>
+
+    <p class="foot">
+      Type scale <code>34 / 28 / 22 / 17 / 15 / 13 / 12</code> · radius
+      <code>8 / 12 / 16 / 24</code> · spacing on a 4-point grid · motion
+      <code>120 / 240 / 420 ms</code>, all of which collapse to instant when the
+      reader has Reduce Motion on. Step instructions are set at 17/26 because
+      they're read at arm's length while holding a tool. Everything scales to 200%
+      text size without clipping, and no state anywhere is communicated by colour
+      alone.
+    </p>
+    <p class="foot">
+      Next in the build: SQLAlchemy models and the first migration, the auth and
+      media endpoints, then the Flutter scaffold that turns these screens into the
+      real app.
+    </p>
+  </section>
+</div>
+
+<script>
+  (function () {
+    "use strict";
+
+    /* App theme switch. The phone screens keep their own theme rather than
+       following the reader's OS, because a product screenshot that flips
+       is a screenshot you can't discuss. */
+    var reel = document.getElementById("reel");
+    var dark = document.getElementById("t-dark");
+    var light = document.getElementById("t-light");
+
+    function setApp(theme) {
+      reel.setAttribute("data-app", theme);
+      dark.setAttribute("aria-pressed", String(theme === "dark"));
+      light.setAttribute("aria-pressed", String(theme === "light"));
+    }
+    dark.addEventListener("click", function () { setApp("dark"); });
+    light.addEventListener("click", function () { setApp("light"); });
+
+    /* Timeline: tap to expand, and completing a step advances the rail.
+       Mirrors the real behaviour — progress is per-step and the guide is
+       pinned once you start. */
+    var timeline = document.getElementById("timeline");
+    var bar = document.getElementById("bar");
+    var count = document.getElementById("count");
+    var steps = Array.prototype.slice.call(timeline.querySelectorAll(".step"));
+
+    function refresh() {
+      var done = steps.filter(function (s) {
+        return s.getAttribute("data-state") === "done";
+      }).length;
+      bar.style.width = Math.round((done / steps.length) * 100) + "%";
+      count.textContent = done + " of " + steps.length + " done";
+    }
+
+    steps.forEach(function (step, index) {
+      step.addEventListener("click", function () {
+        var expanded = step.getAttribute("aria-expanded") === "true";
+        var state = step.getAttribute("data-state");
+
+        /* First tap opens the step; tapping an open current step completes it
+           and promotes the next one. */
+        if (!expanded) {
+          steps.forEach(function (other) {
+            other.setAttribute("aria-expanded", "false");
+          });
+          step.setAttribute("aria-expanded", "true");
+          return;
+        }
+
+        if (state === "current") {
+          step.setAttribute("data-state", "done");
+          step.querySelector(".bead").textContent = "✓";
+          step.setAttribute("aria-expanded", "false");
+          var next = steps[index + 1];
+          if (next && next.getAttribute("data-state") === "pending") {
+            next.setAttribute("data-state", "current");
+            next.setAttribute("aria-expanded", "true");
+          }
+          refresh();
+        } else {
+          step.setAttribute("aria-expanded", "false");
+        }
+      });
+    });
+
+    refresh();
+  })();
+</script>

@@ -40,7 +40,7 @@ Semantic names only — components never reference a raw hex value.
 | `border.strong` | `#FFFFFF` @ 16% | focused inputs |
 | `text.primary` | `#F5F5F7` | body, titles |
 | `text.secondary` | `#A0A0AB` | supporting copy |
-| `text.tertiary` | `#6E6E7A` | metadata |
+| `text.tertiary` | `#7F7F8B` | metadata |
 | `accent.primary` | `#3D7BFF` | primary actions, active state |
 | `accent.onPrimary` | `#FFFFFF` | text on accent |
 | `accent.muted` | `#3D7BFF` @ 14% | accent surfaces |
@@ -48,16 +48,28 @@ Semantic names only — components never reference a raw hex value.
 ### Light
 
 `bg.canvas #FBFBFD`, `bg.surface #FFFFFF`, `bg.surfaceRaised #F4F4F7`,
-`text.primary #0B0B0F`, `text.secondary #55555F`, `text.tertiary #8A8A94`,
+`text.primary #0B0B0F`, `text.secondary #55555F`, `text.tertiary #6E6E78`,
 `border.subtle #0B0B0F` @ 8%, `accent.primary #2563EB`.
 
-### Safety palette (identical in both themes, contrast-checked)
+### Safety palette
 
-| Class | Fill | Text/Icon | Meaning |
-| --- | --- | --- | --- |
-| `safety.green` | `#0F3D2E` / `#E7F7F0` | `#22C55E` | Safe DIY |
-| `safety.yellow` | `#40320B` / `#FDF6E3` | `#F5A524` | Proceed carefully |
-| `safety.red` | `#45141A` / `#FDECEE` | `#EF4444` | Professional recommended |
+The hue is used for strokes, dots and glyphs. Readable text uses a separate
+**ink** token, because the hue alone does not clear 4.5:1 on every fill — see
+the amendment note below.
+
+| Class | Fill (dark / light) | Hue | Ink (dark / light) | Meaning |
+| --- | --- | --- | --- | --- |
+| `safety.green` | `#0F3D2E` / `#E7F7F0` | `#22C55E` | `#22C55E` / `#15803D` | Safe DIY |
+| `safety.yellow` | `#40320B` / `#FDF6E3` | `#F5A524` | `#F5A524` / `#8A5A00` | Proceed carefully |
+| `safety.red` | `#45141A` / `#FDECEE` | `#EF4444` | `#FF7B7B` / `#B4232B` | Professional recommended |
+
+> **Amendment, 2026-08-05.** Building the prototype in
+> [`prototype/screens.html`](prototype/screens.html) and measuring it found three
+> combinations below the 4.5:1 this document requires: `text.tertiary` at 3.9:1
+> on the dark canvas and 3.31:1 on the light one, and `safety.red` as text on its
+> own dark fill at 4.08:1. The values above are the corrected ones. Both themes
+> now measure clean across every chip, caution and notice. This is why the
+> prototype exists before the Flutter code does.
 
 Safety state is **never** communicated by colour alone: every badge pairs the
 colour with an icon and a word.
